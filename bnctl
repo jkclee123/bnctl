@@ -1,0 +1,36 @@
+#!/bin/bash
+# control screen brightness
+# incbn: bnctl inc 0.05
+# decbn: bnctl dec 0.05
+# setbn: bnctl set 0.5
+
+if [ "$#" != "2" ]; then
+	exit 1;
+fi
+
+# cal new brightness
+case $1 in
+	inc)
+		ori_brightness=$(xrandr --verbose | awk '/Brightness/ { print $2; exit }')
+		new_brightness=$(echo $ori_brightness + $2 | bc)
+		;;
+	dec)
+		ori_brightness=$(xrandr --verbose | awk '/Brightness/ { print $2; exit }')
+		new_brightness=$(echo $ori_brightness - $2 | bc)
+		;;
+	set)
+		new_brightness=$2
+		;;
+esac
+
+# brightness range 0.0 to 1.0
+if (( $(bc <<< "$new_brightness < 0.0") || $(bc <<< "$new_brightness > 1.0") )); then
+	exit 1;
+fi
+
+# change all display brightness
+devices=$(xrandr --verbose | awk '/ connected/ {print $1; }')
+for device in $devices
+	do
+		xrandr --output $device --brightness $new_brightness
+	done
